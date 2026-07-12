@@ -4,17 +4,31 @@ import { EXPORT_GUIDE_CONTEXT } from '../constants';
 
 const API_KEY = process.env.API_KEY;
 
-if (!API_KEY) {
-  console.warn("API_KEY environment variable not set. AI features will not work.");
-}
+let aiInstance: GoogleGenAI | null = null;
+let currentApiKeyUsed: string | null = null;
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+const getAi = (): GoogleGenAI => {
+  let key: string | undefined = undefined;
+  if (typeof window !== 'undefined') {
+    key = localStorage.getItem('custom_gemini_api_key') || undefined;
+  }
+  if (!key) {
+    key = API_KEY;
+  }
+  if (!key) {
+    throw new Error("API Key is not configured. Please configure your Gemini API Key in the Settings panel.");
+  }
+  
+  if (!aiInstance || currentApiKeyUsed !== key) {
+    aiInstance = new GoogleGenAI({ apiKey: key });
+    currentApiKeyUsed = key;
+  }
+  return aiInstance;
+};
 
 export const generateAiResponse = async (prompt: string): Promise<string> => {
-  if (!API_KEY) {
-    throw new Error("API Key is not configured. Please set the API_KEY environment variable.");
-  }
   try {
+    const ai = getAi();
     const fullPrompt = `${EXPORT_GUIDE_CONTEXT}\n\n---\n\nUSER QUERY: ${prompt}\n\nAI RESPONSE:`;
     
     const response = await ai.models.generateContent({
@@ -37,10 +51,8 @@ export const generateAiResponse = async (prompt: string): Promise<string> => {
 
 
 export const generateCreativeAiResponse = async (prompt: string, model: string = 'gemini-3-flash-preview'): Promise<string> => {
-  if (!API_KEY) {
-    throw new Error("API Key is not configured. Please set the API_KEY environment variable.");
-  }
   try {
+    const ai = getAi();
     const response = await ai.models.generateContent({
       model: model,
       contents: prompt,
@@ -60,10 +72,7 @@ export const generateCreativeAiResponse = async (prompt: string, model: string =
 };
 
 export const generateGroundedAiResponse = async (prompt: string, enableThinking: boolean): Promise<GenerateContentResponse> => {
-  if (!API_KEY) {
-    throw new Error("API Key is not configured.");
-  }
-
+  const ai = getAi();
   // Use flash model for speed unless thinking is explicitly requested
   const model = enableThinking ? 'gemini-3.1-pro-preview' : 'gemini-3-flash-preview';
   const config: any = {
@@ -83,9 +92,7 @@ export const generateGroundedAiResponse = async (prompt: string, enableThinking:
 };
 
 export const generateMapResponse = async (prompt: string, location: { latitude: number, longitude: number }): Promise<GenerateContentResponse> => {
-    if (!API_KEY) {
-        throw new Error("API Key is not configured.");
-    }
+    const ai = getAi();
     return ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
@@ -101,10 +108,8 @@ export const generateMapResponse = async (prompt: string, location: { latitude: 
 };
 
 export const generateSpeech = async (text: string): Promise<string | undefined> => {
-    if (!API_KEY) {
-        throw new Error("API Key is not configured.");
-    }
     try {
+        const ai = getAi();
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
             contents: [{ parts: [{ text: text }] }],

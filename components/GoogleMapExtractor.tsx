@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { MapLead, Page } from '../types';
+import { MapLead, Page, CampaignContact } from '../types';
 import { generateMapResponse, generateCreativeAiResponse } from '../services/geminiService';
 import LoadingSpinner from './LoadingSpinner';
 import { translations } from '../translations';
@@ -151,6 +151,40 @@ const GoogleMapExtractor: React.FC<GoogleMapExtractorProps> = ({ t, setActivePag
         document.body.removeChild(link);
     };
 
+    const handleAddToCampaign = () => {
+        const leadsToAdd = structuredParties.filter((_, i) => selectedLeads.includes(i));
+        const newContacts: CampaignContact[] = leadsToAdd.map(lead => ({
+            id: Date.now() + Math.random(),
+            companyName: lead.name,
+            contactPerson: 'Lead Contact',
+            email: lead.email || '',
+            phone: lead.phone || '',
+            country: location,
+            type: 'Buyer', // Default extracted lead type as Buyer
+            product: query,
+        }));
+
+        const existingContactsJSON = localStorage.getItem('campaignContactList');
+        const existingContacts: CampaignContact[] = existingContactsJSON ? JSON.parse(existingContactsJSON) : [];
+        
+        // Filter out duplicate emails or companyNames if email is blank
+        const uniqueNewContacts = newContacts.filter(
+            newContact => !existingContacts.some(existing => 
+                (newContact.email && existing.email === newContact.email) || 
+                (!newContact.email && existing.companyName === newContact.companyName)
+            )
+        );
+
+        if (uniqueNewContacts.length === 0) {
+            alert(`All ${selectedLeads.length} selected lead(s) are already in your communication directory.`);
+        } else {
+            const updatedContacts = [...existingContacts, ...uniqueNewContacts];
+            localStorage.setItem('campaignContactList', JSON.stringify(updatedContacts));
+            alert(`${uniqueNewContacts.length} new business contact(s) saved for next communication.`);
+        }
+        setSelectedLeads([]);
+    };
+
     const isNextSearchCharged = !isPremium && dailySearchCount >= FREE_LIMIT;
     const isSearchLocked = isNextSearchCharged && walletBalance < SEARCH_CHARGE;
 
@@ -265,15 +299,22 @@ const GoogleMapExtractor: React.FC<GoogleMapExtractorProps> = ({ t, setActivePag
             )}
 
             {structuredParties.length > 0 && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-                    <div className="bg-primary p-3 rounded-2xl shadow-2xl flex items-center gap-4 border-2 border-brand/30 animate-fadeInUp backdrop-blur-md">
-                         <p className="text-text-primary font-bold px-2">{selectedLeads.length} Leads Selected</p>
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-max max-w-[90vw]">
+                    <div className="bg-primary p-3 rounded-2xl shadow-2xl flex flex-wrap items-center justify-center gap-3 border-2 border-brand/30 animate-fadeInUp backdrop-blur-md">
+                         <p className="text-text-primary font-bold px-2 text-sm">{selectedLeads.length} Selected</p>
                          <button
                             onClick={handleDownloadCSV}
-                            className="flex items-center gap-2 bg-brand text-primary font-black py-2 px-8 rounded-xl hover:bg-opacity-80 transition shadow-lg shadow-brand/20 uppercase tracking-widest text-xs"
+                            className="flex items-center gap-2 bg-secondary text-text-primary font-black py-2 px-5 rounded-xl border border-highlight hover:bg-accent transition uppercase tracking-widest text-xs"
                         >
                             <DownloadIcon className="w-4 h-4" />
-                            Download Selected Report
+                            Download CSV
+                        </button>
+                        <button
+                            onClick={handleAddToCampaign}
+                            disabled={selectedLeads.length === 0}
+                            className="flex items-center gap-2 bg-brand text-primary font-black py-2 px-5 rounded-xl hover:bg-opacity-80 transition disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-xs shadow-lg shadow-brand/20"
+                        >
+                            Store for Next Communication
                         </button>
                     </div>
                 </div>

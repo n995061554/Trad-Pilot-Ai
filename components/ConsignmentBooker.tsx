@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Consignment, Page } from '../types';
 import { generateCreativeAiResponse } from '../services/geminiService';
@@ -54,7 +53,7 @@ const FinancialSummary: React.FC<{ consignment: Consignment, currency: Currency 
     const formatCurrency = (value: number) => `${currency.symbol}${value.toLocaleString('en-IN')}`;
 
     return (
-        <div className="bg-primary p-6 rounded-lg shadow-lg self-start sticky top-8">
+        <div className="bg-primary p-6 rounded-lg shadow-lg self-start sticky top-8 animate-fadeIn">
             <h2 className="text-xl font-semibold mb-4 text-text-primary">Live Financial Summary</h2>
             <div className="bg-secondary p-4 rounded-lg space-y-2">
                 <div className="flex justify-between items-center text-sm">
@@ -171,7 +170,7 @@ const ShipmentExperience: React.FC<ShipmentExperienceProps> = ({ t, currency, se
             case 1:
                 return (
                     <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Enter Product and Buyer Details</h3>
+                        <h3 className="text-lg font-semibold text-text-primary">Enter Product and Buyer Details</h3>
                         <InputField label="Product Name" name="productName" />
                         <InputField label="Buyer Name" name="buyerName" />
                         <InputField label="Buyer Country" name="buyerCountry" />
@@ -181,7 +180,7 @@ const ShipmentExperience: React.FC<ShipmentExperienceProps> = ({ t, currency, se
             case 2:
                 return (
                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Finalize Pricing and Payment Terms</h3>
+                        <h3 className="text-lg font-semibold text-text-primary">Finalize Pricing and Payment Terms</h3>
                         <InputField label={`Selling Price per MT (${currency.symbol}, FOB)`} name="sellingPricePerMT" type="number" />
                         <InputField label={`Purchase Price per MT (${currency.symbol})`} name="purchasePricePerMT" type="number" />
                         <InputField label="Payment Terms" name="paymentTerms">
@@ -195,7 +194,7 @@ const ShipmentExperience: React.FC<ShipmentExperienceProps> = ({ t, currency, se
             case 3:
                 return (
                     <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Estimate Domestic Preparation Costs</h3>
+                        <h3 className="text-lg font-semibold text-text-primary">Estimate Domestic Preparation Costs</h3>
                         <CostInputField label={`Quality Inspection Cost (${currency.symbol})`} name="qualityInspectionCost" />
                         <CostInputField label={`Packaging & Labeling Cost (${currency.symbol})`} name="packagingCost" />
                     </div>
@@ -203,7 +202,7 @@ const ShipmentExperience: React.FC<ShipmentExperienceProps> = ({ t, currency, se
             case 4:
                  return (
                     <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Estimate Logistics and Documentation Costs</h3>
+                        <h3 className="text-lg font-semibold text-text-primary">Estimate Logistics and Documentation Costs</h3>
                         <CostInputField label={`Inland Transport (Factory to Port, ${currency.symbol})`} name="inlandTransportCost" />
                         <CostInputField label={`Freight Booking Cost (${currency.symbol})`} name="freightBookingCost" />
                         <CostInputField label={`Export Documentation Cost (${currency.symbol})`} name="exportDocumentationCost" />
@@ -213,7 +212,7 @@ const ShipmentExperience: React.FC<ShipmentExperienceProps> = ({ t, currency, se
              case 5:
                 return (
                     <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Final Financials and Review</h3>
+                        <h3 className="text-lg font-semibold text-text-primary">Final Financials and Review</h3>
                          <CostInputField label={`Bank Charges (${currency.symbol})`} name="bankCharges" />
                          <CostInputField label={`Miscellaneous Costs (${currency.symbol})`} name="miscCost" />
                         <div className="bg-secondary p-4 rounded-lg mt-4">
@@ -231,6 +230,35 @@ const ShipmentExperience: React.FC<ShipmentExperienceProps> = ({ t, currency, se
                 );
             default: return null;
         }
+    };
+
+    const handleConfirmAndBook = () => {
+        const savedConsignments = localStorage.getItem('bookedConsignments');
+        const list = savedConsignments ? JSON.parse(savedConsignments) : [];
+        const newConsignment = {
+            id: Date.now(),
+            date: new Date().toISOString().split('T')[0],
+            productName: consignment.productName,
+            buyerName: consignment.buyerName,
+            buyerCountry: consignment.buyerCountry,
+            quantityMT: consignment.quantityMT,
+            sellingPricePerMT: consignment.sellingPricePerMT,
+            purchasePricePerMT: consignment.purchasePricePerMT,
+            status: 'Processing Documents'
+        };
+        const updatedList = [newConsignment, ...list];
+        localStorage.setItem('bookedConsignments', JSON.stringify(updatedList));
+
+        const savedCompliance = localStorage.getItem('pendingComplianceTasks');
+        const complianceList = savedCompliance ? JSON.parse(savedCompliance) : [];
+        const newComplianceTasks = [
+            { id: Date.now() + 1, task: `FSSAI Quality Certificate approval for ${consignment.productName} to ${consignment.buyerCountry}`, status: 'Pending', product: consignment.productName, country: consignment.buyerCountry },
+            { id: Date.now() + 2, task: `Certificate of Origin (COO) registration for ${consignment.buyerCountry}`, status: 'Pending', product: consignment.productName, country: consignment.buyerCountry }
+        ];
+        localStorage.setItem('pendingComplianceTasks', JSON.stringify([...newComplianceTasks, ...complianceList]));
+
+        alert(`Congratulations! Consignment Booked. Shipment of ${consignment.quantityMT} MT of ${consignment.productName} to ${consignment.buyerName} (${consignment.buyerCountry}) has been registered.`);
+        setActivePage('dashboard');
     };
 
     return (
@@ -271,7 +299,7 @@ const ShipmentExperience: React.FC<ShipmentExperienceProps> = ({ t, currency, se
                     {t('previous')}
                 </button>
                  {currentStep === steps.length ? (
-                    <button onClick={() => alert('Consignment Booked! You can now review the details.')} className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-500 transition">
+                    <button onClick={handleConfirmAndBook} className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-500 transition">
                         {t('confirmAndBook')}
                     </button>
                 ) : (

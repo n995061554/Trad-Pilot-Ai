@@ -24,6 +24,52 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({ t, setActivePage }) =
         channel: 'Email',
     });
 
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [newContactForm, setNewContactForm] = useState({
+        companyName: '',
+        contactPerson: '',
+        email: '',
+        phone: '',
+        country: '',
+        type: 'Buyer' as 'Buyer' | 'Supplier' | 'OEM',
+        product: '',
+    });
+
+    const handleAddCustomContact = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newContactForm.companyName) {
+            alert('Please enter a company name.');
+            return;
+        }
+        
+        const newContact: CampaignContact = {
+            id: Date.now() + Math.random(),
+            companyName: newContactForm.companyName,
+            contactPerson: newContactForm.contactPerson || 'N/A',
+            email: newContactForm.email || '',
+            phone: newContactForm.phone || '',
+            country: newContactForm.country || 'N/A',
+            type: newContactForm.type,
+            product: newContactForm.product || 'N/A',
+        };
+
+        const updatedContacts = [...contacts, newContact];
+        setContacts(updatedContacts);
+        localStorage.setItem('campaignContactList', JSON.stringify(updatedContacts));
+        
+        setNewContactForm({
+            companyName: '',
+            contactPerson: '',
+            email: '',
+            phone: '',
+            country: '',
+            type: 'Buyer',
+            product: '',
+        });
+        setShowAddForm(false);
+        alert('New contact stored successfully for next communication!');
+    };
+
     useEffect(() => {
         const savedContactsJSON = localStorage.getItem('campaignContactList');
         if (savedContactsJSON) {
@@ -289,7 +335,105 @@ Email: ${details.email || '[Email not set]'} | Phone: ${details.phone || '[Phone
 
             {activeTab === 'lists' && (
                 <div className="bg-primary p-6 rounded-lg shadow-lg">
-                    <h2 className="text-xl font-semibold text-text-primary mb-4">Your Contact List</h2>
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-semibold text-text-primary">Your Contact List</h2>
+                        <button
+                            onClick={() => setShowAddForm(!showAddForm)}
+                            className="bg-brand text-primary font-bold py-2 px-4 rounded-lg hover:bg-opacity-80 transition text-sm flex items-center gap-2"
+                        >
+                            {showAddForm ? 'Cancel' : '+ Add New Contact'}
+                        </button>
+                    </div>
+
+                    {showAddForm && (
+                        <form onSubmit={handleAddCustomContact} className="bg-secondary p-5 rounded-lg border border-highlight mb-6 space-y-4">
+                            <h3 className="font-bold text-text-primary text-md">Add Contact Manually</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div>
+                                    <label className="block text-xs font-semibold text-text-secondary">Company Name *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={newContactForm.companyName}
+                                        onChange={(e) => setNewContactForm({ ...newContactForm, companyName: e.target.value })}
+                                        className="mt-1 block w-full bg-accent border-highlight rounded-md shadow-sm py-1.5 px-3 text-text-primary text-sm focus:outline-none"
+                                        placeholder="e.g. Acme Corp"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-text-secondary">Contact Person</label>
+                                    <input
+                                        type="text"
+                                        value={newContactForm.contactPerson}
+                                        onChange={(e) => setNewContactForm({ ...newContactForm, contactPerson: e.target.value })}
+                                        className="mt-1 block w-full bg-accent border-highlight rounded-md shadow-sm py-1.5 px-3 text-text-primary text-sm focus:outline-none"
+                                        placeholder="e.g. John Doe"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-text-secondary">Email Address</label>
+                                    <input
+                                        type="email"
+                                        value={newContactForm.email}
+                                        onChange={(e) => setNewContactForm({ ...newContactForm, email: e.target.value })}
+                                        className="mt-1 block w-full bg-accent border-highlight rounded-md shadow-sm py-1.5 px-3 text-text-primary text-sm focus:outline-none"
+                                        placeholder="e.g. contact@acme.com"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-text-secondary">Phone Number</label>
+                                    <input
+                                        type="text"
+                                        value={newContactForm.phone}
+                                        onChange={(e) => setNewContactForm({ ...newContactForm, phone: e.target.value })}
+                                        className="mt-1 block w-full bg-accent border-highlight rounded-md shadow-sm py-1.5 px-3 text-text-primary text-sm focus:outline-none"
+                                        placeholder="e.g. +123456789"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-text-secondary">Country</label>
+                                    <input
+                                        type="text"
+                                        value={newContactForm.country}
+                                        onChange={(e) => setNewContactForm({ ...newContactForm, country: e.target.value })}
+                                        className="mt-1 block w-full bg-accent border-highlight rounded-md shadow-sm py-1.5 px-3 text-text-primary text-sm focus:outline-none"
+                                        placeholder="e.g. Germany"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-text-secondary">Product Interest</label>
+                                    <input
+                                        type="text"
+                                        value={newContactForm.product}
+                                        onChange={(e) => setNewContactForm({ ...newContactForm, product: e.target.value })}
+                                        className="mt-1 block w-full bg-accent border-highlight rounded-md shadow-sm py-1.5 px-3 text-text-primary text-sm focus:outline-none"
+                                        placeholder="e.g. Basmati Rice"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-text-secondary">Contact Type</label>
+                                    <select
+                                        value={newContactForm.type}
+                                        onChange={(e) => setNewContactForm({ ...newContactForm, type: e.target.value as 'Buyer' | 'Supplier' | 'OEM' })}
+                                        className="mt-1 block w-full bg-accent border-highlight rounded-md shadow-sm py-1.5 px-3 text-text-primary text-sm focus:outline-none"
+                                    >
+                                        <option value="Buyer">Buyer</option>
+                                        <option value="Supplier">Supplier</option>
+                                        <option value="OEM">OEM</option>
+                                    </select>
+                                </div>
+                                <div className="flex items-end">
+                                    <button
+                                        type="submit"
+                                        className="w-full bg-brand text-primary font-bold py-2 px-4 rounded-md hover:bg-opacity-80 transition text-sm h-9"
+                                    >
+                                        Save & Store Contact
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    )}
+
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>

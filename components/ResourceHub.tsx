@@ -47,6 +47,10 @@ const ResourceHub: React.FC<ResourceHubProps> = ({ t, setActivePage, isPremium, 
     const [error, setError] = useState<string | null>(null);
     const [hsCodeHistory, setHsCodeHistory] = useState<string[]>([]);
     const [dailySearchCount, setDailySearchCount] = useState(0);
+    const [autoDownloadHSN, setAutoDownloadHSN] = useState<boolean>(() => {
+        const saved = localStorage.getItem('auto_download_hsn_csv');
+        return saved !== 'false';
+    });
 
     useEffect(() => {
         const savedHistory = localStorage.getItem('hsCodeSearchHistory');
@@ -90,6 +94,26 @@ const ResourceHub: React.FC<ResourceHubProps> = ({ t, setActivePage, isPremium, 
         const newCount = dailySearchCount + 1;
         setDailySearchCount(newCount);
         localStorage.setItem('expo_ops_search_count', String(newCount));
+    };
+
+    const downloadHSCodesAsCSV = (data: HSCodeResult[], queryText: string) => {
+        if (!data || data.length === 0) return;
+        const headers = ["HS Code", "Chapter", "Description", "Confidence", "Notes"];
+        const rows = data.map(r => [r.hsCode, r.chapter, r.description, r.confidenceScore, r.notes]);
+        const csvRows = [
+            headers.join(','),
+            ...rows.map(row => row.map(cell => `"${String(cell || 'N/A').replace(/"/g, '""')}"`).join(','))
+        ];
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const formattedQuery = queryText.trim().replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+        link.setAttribute('download', `HSN_Codes_${formattedQuery || 'Search'}_${Date.now()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const searchResource = async (isInitialSearch: boolean, overrideQuery?: string) => {
@@ -172,8 +196,21 @@ const ResourceHub: React.FC<ResourceHubProps> = ({ t, setActivePage, isPremium, 
             if (isInitialSearch) {
                 setResults(newResults);
                 updateSearchCount();
+                if (activeTab === 'hsCode' && autoDownloadHSN) {
+                    setTimeout(() => {
+                        downloadHSCodesAsCSV(newResults, searchQuery || '');
+                    }, 100);
+                }
             } else {
-                 setResults(prev => [...prev, ...newResults]);
+                 setResults(prev => {
+                     const updated = [...prev, ...newResults];
+                     if (activeTab === 'hsCode' && autoDownloadHSN) {
+                         setTimeout(() => {
+                             downloadHSCodesAsCSV(newResults, searchQuery || '');
+                         }, 100);
+                     }
+                     return updated;
+                 });
             }
         } catch (err) {
             console.error("Failed to get AI response:", err);
@@ -347,6 +384,21 @@ const ResourceHub: React.FC<ResourceHubProps> = ({ t, setActivePage, isPremium, 
                             ))}
                         </div>
                     )}
+                    <div className="mt-3 flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            id="auto-download-hsn"
+                            checked={autoDownloadHSN}
+                            onChange={(e) => {
+                                setAutoDownloadHSN(e.target.checked);
+                                localStorage.setItem('auto_download_hsn_csv', String(e.target.checked));
+                            }}
+                            className="h-4 w-4 rounded bg-accent border-highlight text-brand focus:ring-brand cursor-pointer"
+                        />
+                        <label htmlFor="auto-download-hsn" className="text-xs text-text-secondary cursor-pointer select-none font-medium">
+                            Auto-download HSN codes as CSV upon search completion
+                        </label>
+                    </div>
                 </div>
             );
         }
@@ -460,15 +512,27 @@ const ResourceHub: React.FC<ResourceHubProps> = ({ t, setActivePage, isPremium, 
         return (
             <>
                 {results.length > 0 && canSelectItems && (
-                    <div className="flex items-center mb-4 p-2 bg-secondary rounded-md sticky top-0 z-10">
-                        <input
-                            type="checkbox"
-                            id="select-all"
-                            className="h-5 w-5 rounded bg-accent border-highlight text-brand focus:ring-brand cursor-pointer"
-                            checked={results.length > 0 && selectedItems.length === results.length}
-                            onChange={handleSelectAll}
-                        />
-                        <label htmlFor="select-all" className="ml-3 font-semibold text-text-primary cursor-pointer">Select All ({selectedItems.length} / {results.length})</label>
+                    <div className="flex items-center justify-between mb-4 p-2 bg-secondary rounded-md sticky top-0 z-10 gap-4">
+                        <div className="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="select-all"
+                                className="h-5 w-5 rounded bg-accent border-highlight text-brand focus:ring-brand cursor-pointer"
+                                checked={results.length > 0 && selectedItems.length === results.length}
+                                onChange={handleSelectAll}
+                            />
+                            <label htmlFor="select-all" className="ml-3 font-semibold text-text-primary cursor-pointer">Select All ({selectedItems.length} / {results.length})</label>
+                        </div>
+                        {activeTab === 'hsCode' && (
+                            <button
+                                onClick={handleDownloadCSV}
+                                className="flex items-center gap-1.5 bg-brand text-primary hover:bg-opacity-90 transition font-bold py-1.5 px-3.5 rounded-lg text-xs"
+                                title="Download HSN codes as CSV"
+                            >
+                                <DownloadIcon className="w-4 h-4" />
+                                <span>Download CSV</span>
+                            </button>
+                        )}
                     </div>
                 )}
                 <div className="space-y-4 mt-4">

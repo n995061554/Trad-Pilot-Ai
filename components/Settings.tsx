@@ -69,6 +69,9 @@ const Settings: React.FC<SettingsProps> = ({
     const [localNavOrder, setLocalNavOrder] = useState<Page[]>(navOrder);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'dirty' | 'saved'>('idle');
     const [isPrinting, setIsPrinting] = useState(false);
+    const [localCustomApiKey, setLocalCustomApiKey] = useState(() => {
+        return typeof window !== 'undefined' ? (localStorage.getItem('custom_gemini_api_key') || '') : '';
+    });
     
     const dragItem = useRef<number | null>(null);
     const dragOverItem = useRef<number | null>(null);
@@ -90,6 +93,9 @@ const Settings: React.FC<SettingsProps> = ({
         onIconSetChange(localIconSet);
         onNavOrderChange(localNavOrder);
         onProfileUpdate(localProfile);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('custom_gemini_api_key', localCustomApiKey.trim());
+        }
         setSaveStatus('saved');
     };
 
@@ -417,6 +423,27 @@ const Settings: React.FC<SettingsProps> = ({
                             <div>
                                  <label className="block text-sm font-medium text-text-primary mb-2">Currency</label>
                                 <div className="relative"><span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-text-secondary"><CurrencyIcon /></span><select value={localCurrency.code} onChange={e => { setLocalCurrency(currencies.find(c => c.code === e.target.value)!); setSaveStatus('dirty'); }} className="w-full bg-accent border-highlight rounded-md py-2 pl-10 pr-4 text-text-primary focus:outline-none focus:ring-brand focus:border-brand text-sm">{currencies.map(c => (<option key={c.code} value={c.code}>{c.code} ({c.symbol})</option>))}</select></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Desktop App & API Settings */}
+                    <div>
+                        <h2 className="text-xl font-bold text-text-primary mb-1">Desktop App & API Settings</h2>
+                        <p className="text-sm text-text-secondary mb-4">Configure custom settings for PC desktop execution (Electron/Tauri) and local search queries.</p>
+                        <div className="bg-secondary p-6 rounded-lg">
+                            <div>
+                                <label className="block text-sm font-medium text-text-primary mb-2">Custom Gemini API Key</label>
+                                <input 
+                                    type="password" 
+                                    value={localCustomApiKey} 
+                                    onChange={e => { setLocalCustomApiKey(e.target.value); setSaveStatus('dirty'); }} 
+                                    placeholder="Enter your personal Gemini API Key (e.g. AIzaSy...)" 
+                                    className="block w-full bg-accent border-highlight rounded-md shadow-sm py-2 px-3 text-text-primary focus:outline-none focus:ring-brand focus:border-brand sm:text-sm"
+                                />
+                                <p className="text-xs text-text-secondary mt-2 leading-relaxed">
+                                    By providing a custom API Key, your desktop app will execute all search and extraction tools locally using your personal Gemini account. Leaving this field blank falls back to the application's default pre-configured API Key.
+                                </p>
                             </div>
                         </div>
                     </div>

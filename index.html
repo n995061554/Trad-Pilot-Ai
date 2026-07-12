@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trade X Cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --font-family: 'Inter', sans-serif;
+        --color-primary: #0F1A14;
+        --color-secondary: #1C2A24;
+        --color-accent: #2A4235;
+        --color-highlight: #385A47;
+        --color-text-primary: #F0FDF4;
+        --color-text-secondary: #A3B3AD;
+        --color-brand: #34D399;
+        --color-duotone-primary: #A3B3AD;
+        --color-duotone-secondary: #34D399;
+      }
+      body {
+        font-family: var(--font-family);
+      }
+      .duotone-primary { color: var(--color-duotone-primary); }
+      .duotone-secondary { color: var(--color-duotone-secondary); opacity: 0.6; }
+
+      @media print {
+        body, html {
+          background: white !important;
+          color: black !important;
+          height: auto !important;
+          overflow: visible !important;
+        }
+        aside, header, footer, .print\:hidden {
+          display: none !important;
+        }
+        #root {
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+        .print\:block {
+          display: block !important;
+        }
+        @page {
+          size: A4;
+          margin: 0;
+        }
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              roboto: ['Roboto', 'sans-serif'],
+              lato: ['Lato', 'sans-serif'],
+              poppins: ['Poppins', 'sans-serif'],
+            },
+            colors: {
+              'primary': 'var(--color-primary)',
+              'secondary': 'var(--color-secondary)',
+              'accent': 'var(--color-accent)',
+              'highlight': 'var(--color-highlight)',
+              'text-primary': 'var(--color-text-primary)',
+              'text-secondary': 'var(--color-text-secondary)',
+              'brand': 'var(--color-brand)',
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "@google/genai": "https://esm.sh/@google/genai@^1.41.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-primary text-text-primary">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

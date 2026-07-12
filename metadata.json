@@ -1,0 +1,8 @@
+{
+  "name": "Trade X Cloud",
+  "description": "An advanced AI-powered application to guide aspiring exporters through every step of their journey, from product selection and profit calculation to finding buyers and navigating compliance.",
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ]
+}
